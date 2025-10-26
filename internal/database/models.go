@@ -4,8 +4,20 @@
 
 package database
 
+type Board struct {
+	ID   int32
+	Name string
+}
+
+type State struct {
+	ID      int32
+	Name    string
+	BoardID int32
+}
+
 type Task struct {
 	ID      int32
 	Title   string
 	Content string
+	StateID int32
 }
