@@ -1,5 +1,17 @@
-CREATE TABLE IF NOT EXISTS tasks (
+CREATE TABLE boards (
     id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL
+    name TEXT NOT NULL
+);
+
+CREATE TABLE states (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    board_id INTEGER NOT NULL REFERENCES boards(id) ON DELETE CASCADE
+);
+
+CREATE TABLE tasks (
+   id SERIAL PRIMARY KEY,
+   title TEXT NOT NULL,
+   content TEXT NOT NULL,
+   state_id INTEGER NOT NULL REFERENCES states(id)
 );

@@ -9,25 +9,111 @@ import (
 	"context"
 )
 
+const createBoard = `-- name: CreateBoard :one
+INSERT INTO boards (name) VALUES ($1) RETURNING id, name
+`
+
+func (q *Queries) CreateBoard(ctx context.Context, name string) (Board, error) {
+	row := q.db.QueryRowContext(ctx, createBoard, name)
+	var i Board
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const createState = `-- name: CreateState :one
+INSERT INTO states (name, board_id) VALUES ($1, $2) RETURNING id, name, board_id
+`
+
+type CreateStateParams struct {
+	Name    string
+	BoardID int32
+}
+
+func (q *Queries) CreateState(ctx context.Context, arg CreateStateParams) (State, error) {
+	row := q.db.QueryRowContext(ctx, createState, arg.Name, arg.BoardID)
+	var i State
+	err := row.Scan(&i.ID, &i.Name, &i.BoardID)
+	return i, err
+}
+
 const createTask = `-- name: CreateTask :one
-INSERT INTO tasks (title, content) VALUES ($1, $2)
-RETURNING id, title, content
+INSERT INTO tasks (title, content, state_id) VALUES ($1, $2, $3) RETURNING id, title, content, state_id
 `
 
 type CreateTaskParams struct {
 	Title   string
 	Content string
+	StateID int32
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
-	row := q.db.QueryRowContext(ctx, createTask, arg.Title, arg.Content)
+	row := q.db.QueryRowContext(ctx, createTask, arg.Title, arg.Content, arg.StateID)
 	var i Task
-	err := row.Scan(&i.ID, &i.Title, &i.Content)
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Content,
+		&i.StateID,
+	)
 	return i, err
 }
 
+const listBoards = `-- name: ListBoards :many
+SELECT id, name FROM boards
+`
+
+func (q *Queries) ListBoards(ctx context.Context) ([]Board, error) {
+	rows, err := q.db.QueryContext(ctx, listBoards)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Board
+	for rows.Next() {
+		var i Board
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStatesByBoard = `-- name: ListStatesByBoard :many
+SELECT id, name, board_id FROM states WHERE board_id = $1
+`
+
+func (q *Queries) ListStatesByBoard(ctx context.Context, boardID int32) ([]State, error) {
+	rows, err := q.db.QueryContext(ctx, listStatesByBoard, boardID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []State
+	for rows.Next() {
+		var i State
+		if err := rows.Scan(&i.ID, &i.Name, &i.BoardID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTasks = `-- name: ListTasks :many
-SELECT id, title, content FROM tasks ORDER BY id DESC
+SELECT id, title, content, state_id FROM tasks
 `
 
 func (q *Queries) ListTasks(ctx context.Context) ([]Task, error) {
@@ -39,7 +125,44 @@ func (q *Queries) ListTasks(ctx context.Context) ([]Task, error) {
 	var items []Task
 	for rows.Next() {
 		var i Task
-		if err := rows.Scan(&i.ID, &i.Title, &i.Content); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Content,
+			&i.StateID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTasksByState = `-- name: ListTasksByState :many
+SELECT id, title, content, state_id FROM tasks WHERE state_id = $1
+`
+
+func (q *Queries) ListTasksByState(ctx context.Context, stateID int32) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, listTasksByState, stateID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Content,
+			&i.StateID,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

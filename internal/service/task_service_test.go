@@ -7,20 +7,20 @@ import (
 	"github.com/edvina16/icpal-backend/internal/database"
 )
 
-type mockDb struct{}
+type mockTaskDb struct{}
 
-func (m *mockDb) ListTasks(ctx context.Context) ([]database.Task, error) {
+func (m *mockTaskDb) ListTasks(ctx context.Context) ([]database.Task, error) {
 	return []database.Task{
 		{ID: 1, Title: "Test", Content: "Content test"},
 	}, nil
 }
 
-func (m *mockDb) CreateTask(ctx context.Context, arg database.CreateTaskParams) (database.Task, error) {
-	return database.Task{ID: 2, Title: arg.Title, Content: arg.Content}, nil
+func (m *mockTaskDb) CreateTask(ctx context.Context, params database.CreateTaskParams) (database.Task, error) {
+	return database.Task{ID: 2, Title: params.Title, Content: params.Content}, nil
 }
 
 func TestListTasks(t *testing.T) {
-	svc := TaskService{DB: &mockDb{}}
+	svc := TaskService{DB: &mockTaskDb{}}
 	tasks, err := svc.ListTasks(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error listing tasks: %v", err)
@@ -31,7 +31,7 @@ func TestListTasks(t *testing.T) {
 }
 
 func TestCreateTask(t *testing.T) {
-	svc := TaskService{DB: &mockDb{}}
+	svc := TaskService{DB: &mockTaskDb{}}
 	task, err := svc.CreateTask(context.Background(), "New", "Content")
 	if err != nil {
 		t.Fatalf("unexpected error creating task: %v", err)
