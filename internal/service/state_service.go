@@ -10,6 +10,8 @@ import (
 type StateDB interface {
 	ListStatesByBoard(ctx context.Context, boardID int32) ([]database.State, error)
 	CreateState(ctx context.Context, params database.CreateStateParams) (database.State, error)
+	ListTasksByState(ctx context.Context, boardID int32) ([]database.Task, error)
+	CreateTask(ctx context.Context, params database.CreateTaskParams) (database.Task, error)
 }
 
 type StateService struct {
@@ -42,4 +44,34 @@ func (s *StateService) CreateState(ctx context.Context, name string, boardID int
 		return models.State{}, err
 	}
 	return models.State{ID: int(b.ID), Name: b.Name, BoardID: int(b.BoardID)}, nil
+}
+
+func (s *StateService) ListTasksByState(ctx context.Context, stateID int) ([]models.Task, error) {
+	dbTasks, err := s.DB.ListTasksByState(ctx, int32(stateID))
+	if err != nil {
+		return nil, err
+	}
+	var tasks []models.Task
+	for _, dbTask := range dbTasks {
+		tasks = append(tasks, models.Task{
+			ID:      int(dbTask.ID),
+			Title:   dbTask.Title,
+			Content: dbTask.Content,
+			StateID: int(dbTask.StateID),
+		})
+	}
+	return tasks, nil
+}
+
+func (s *StateService) CreateTaskInState(ctx context.Context, title string, content string, stateID int) (models.Task, error) {
+	params := database.CreateTaskParams{
+		Title:   title,
+		Content: content,
+		StateID: int32(stateID),
+	}
+	t, err := s.DB.CreateTask(ctx, params)
+	if err != nil {
+		return models.Task{}, err
+	}
+	return models.Task{ID: int(t.ID), Title: t.Title, Content: t.Content, StateID: int(t.StateID)}, nil
 }
