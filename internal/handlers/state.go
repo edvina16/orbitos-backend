@@ -80,3 +80,21 @@ func (h *StateHandler) CreateTaskInState(c echo.Context) error {
 	}
 	return c.JSON(http.StatusCreated, task)
 }
+
+func (h *StateHandler) UpdateTaskState(c echo.Context) error {
+	taskIDStr := c.Param("task_id")
+	stateIDStr := c.Param("state_id")
+	taskID, err := strconv.Atoi(taskIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid task ID"})
+	}
+	stateID, err := strconv.Atoi(stateIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid state ID"})
+	}
+	err = h.Service.UpdateTaskState(c.Request().Context(), taskID, stateID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.NoContent(http.StatusOK)
+}

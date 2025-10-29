@@ -12,6 +12,7 @@ type StateDB interface {
 	CreateState(ctx context.Context, params database.CreateStateParams) (database.State, error)
 	ListTasksByState(ctx context.Context, boardID int32) ([]database.Task, error)
 	CreateTask(ctx context.Context, params database.CreateTaskParams) (database.Task, error)
+	UpdateTaskState(ctx context.Context, arg database.UpdateTaskStateParams) error
 }
 
 type StateService struct {
@@ -74,4 +75,12 @@ func (s *StateService) CreateTaskInState(ctx context.Context, title string, cont
 		return models.Task{}, err
 	}
 	return models.Task{ID: int(t.ID), Title: t.Title, Content: t.Content, StateID: int(t.StateID)}, nil
+}
+
+func (s *StateService) UpdateTaskState(ctx context.Context, taskID int, stateID int) error {
+	params := database.UpdateTaskStateParams{
+		ID:      int32(taskID),
+		StateID: int32(stateID),
+	}
+	return s.DB.UpdateTaskState(ctx, params)
 }
