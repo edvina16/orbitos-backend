@@ -10,6 +10,9 @@ import (
 type TaskDB interface {
 	CreateTask(ctx context.Context, params database.CreateTaskParams) (database.Task, error)
 	ListTasks(ctx context.Context) ([]database.Task, error)
+	DeleteTask(ctx context.Context, taskID int32) error
+	UpdateTask(ctx context.Context, arg database.UpdateTaskParams) error
+	GetTaskByID(ctx context.Context, taskID int32) (database.Task, error)
 }
 
 type TaskService struct {
@@ -46,4 +49,35 @@ func (s *TaskService) CreateTask(ctx context.Context, title, content string) (mo
 		Title:   dbTask.Title,
 		Content: dbTask.Content,
 	}, nil
+}
+
+func (s *TaskService) DeleteTask(ctx context.Context, taskID int) error {
+	return s.DB.DeleteTask(ctx, int32(taskID))
+}
+
+func (s *TaskService) UpdateTask(ctx context.Context, taskID int, title, content string) error {
+	arg := database.UpdateTaskParams{
+		ID:      int32(taskID),
+		Title:   title,
+		Content: content,
+	}
+
+	return s.DB.UpdateTask(ctx, arg)
+}
+
+func (s *TaskService) GetTaskByID(ctx context.Context, taskID int32) (models.Task, error) {
+	dbTask, err := s.DB.ListTasks(ctx)
+	if err != nil {
+		return models.Task{}, err
+	}
+	for _, t := range dbTask {
+		if t.ID == taskID {
+			return models.Task{
+				ID:      int(t.ID),
+				Title:   t.Title,
+				Content: t.Content,
+			}, nil
+		}
+	}
+	return models.Task{}, nil
 }

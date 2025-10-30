@@ -21,3 +21,30 @@ SELECT * FROM tasks;
 
 -- name: UpdateTaskState :exec
 UPDATE tasks SET state_id = $2 WHERE id = $1;
+
+-- name: DeleteTask :exec
+DELETE FROM tasks WHERE id = $1;
+
+-- name: UpdateTask :exec
+UPDATE tasks SET title = $2, content = $3 WHERE id = $1;
+
+-- name: DeleteState :exec
+DELETE FROM states WHERE id = $1;
+
+-- name: UpdateState :exec
+UPDATE states SET name = $2 WHERE id = $1;
+
+-- name: DeleteBoard :exec
+DELETE FROM boards WHERE id = $1;
+
+-- name: UpdateBoard :exec
+UPDATE boards SET name = $2 WHERE id = $1;
+
+-- name: GetBoardByID :one
+SELECT * FROM boards WHERE id = $1;
+
+-- name: GetStateByID :one
+SELECT * FROM states WHERE id = $1;
+
+-- name: GetTaskByID :one
+SELECT * FROM tasks WHERE id = $1;

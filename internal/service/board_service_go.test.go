@@ -15,12 +15,20 @@ func (m *mockBoardDb) ListBoards(ctx context.Context) ([]database.Board, error) 
 	}, nil
 }
 
-func (m *mockBoardDb) GetBoardByID(ctx context.Context, id int32) (database.Board, error) {
-	return database.Board{ID: id, Name: "Test Board"}, nil
-}
-
 func (m *mockBoardDb) CreateBoard(ctx context.Context, name string) (database.Board, error) {
 	return database.Board{ID: 2, Name: name}, nil
+}
+
+func (m *mockBoardDb) DeleteBoard(ctx context.Context, id int32) error {
+	return nil
+}
+
+func (m *mockBoardDb) UpdateBoard(ctx context.Context, arg database.UpdateBoardParams) error {
+	return nil
+}
+
+func (m *mockBoardDb) GetBoardByID(ctx context.Context, boardID int32) (database.Board, error) {
+	return database.Board{ID: boardID, Name: "Test Board"}, nil
 }
 
 func TestListBoards(t *testing.T) {

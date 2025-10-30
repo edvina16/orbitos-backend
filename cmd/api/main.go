@@ -33,7 +33,7 @@ func main() {
 	routes.RegisterBoard(e, boardHandler)
 
 	stateService := &service.StateService{DB: queries}
-	stateHandler := &handlers.StateHandler{Service: stateService}
+	stateHandler := &handlers.StateHandler{Service: stateService, TaskService: taskService}
 	routes.RegisterState(e, stateHandler)
 
 	e.Logger.Fatal(e.Start(":5000"))

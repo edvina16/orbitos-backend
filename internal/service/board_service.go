@@ -10,6 +10,9 @@ import (
 type BoardDB interface {
 	ListBoards(ctx context.Context) ([]database.Board, error)
 	CreateBoard(ctx context.Context, name string) (database.Board, error)
+	GetBoardByID(ctx context.Context, boardID int32) (database.Board, error)
+	DeleteBoard(ctx context.Context, id int32) error
+	UpdateBoard(ctx context.Context, arg database.UpdateBoardParams) error
 }
 
 type BoardService struct {
@@ -47,4 +50,16 @@ func (s *BoardService) CreateBoard(ctx context.Context, name string) (models.Boa
 		return models.Board{}, err
 	}
 	return models.Board{ID: int(b.ID), Name: b.Name}, nil
+}
+
+func (s *BoardService) DeleteBoard(ctx context.Context, id int) error {
+	return s.DB.DeleteBoard(ctx, int32(id))
+}
+
+func (s *BoardService) UpdateBoard(ctx context.Context, id int, name string) error {
+	params := database.UpdateBoardParams{
+		ID:   int32(id),
+		Name: name,
+	}
+	return s.DB.UpdateBoard(ctx, params)
 }

@@ -58,6 +58,71 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 	return i, err
 }
 
+const deleteBoard = `-- name: DeleteBoard :exec
+DELETE FROM boards WHERE id = $1
+`
+
+func (q *Queries) DeleteBoard(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteBoard, id)
+	return err
+}
+
+const deleteState = `-- name: DeleteState :exec
+DELETE FROM states WHERE id = $1
+`
+
+func (q *Queries) DeleteState(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteState, id)
+	return err
+}
+
+const deleteTask = `-- name: DeleteTask :exec
+DELETE FROM tasks WHERE id = $1
+`
+
+func (q *Queries) DeleteTask(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteTask, id)
+	return err
+}
+
+const getBoardByID = `-- name: GetBoardByID :one
+SELECT id, name FROM boards WHERE id = $1
+`
+
+func (q *Queries) GetBoardByID(ctx context.Context, id int32) (Board, error) {
+	row := q.db.QueryRowContext(ctx, getBoardByID, id)
+	var i Board
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const getStateByID = `-- name: GetStateByID :one
+SELECT id, name, board_id FROM states WHERE id = $1
+`
+
+func (q *Queries) GetStateByID(ctx context.Context, id int32) (State, error) {
+	row := q.db.QueryRowContext(ctx, getStateByID, id)
+	var i State
+	err := row.Scan(&i.ID, &i.Name, &i.BoardID)
+	return i, err
+}
+
+const getTaskByID = `-- name: GetTaskByID :one
+SELECT id, title, content, state_id FROM tasks WHERE id = $1
+`
+
+func (q *Queries) GetTaskByID(ctx context.Context, id int32) (Task, error) {
+	row := q.db.QueryRowContext(ctx, getTaskByID, id)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Content,
+		&i.StateID,
+	)
+	return i, err
+}
+
 const listBoards = `-- name: ListBoards :many
 SELECT id, name FROM boards
 `
@@ -174,6 +239,49 @@ func (q *Queries) ListTasksByState(ctx context.Context, stateID int32) ([]Task, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateBoard = `-- name: UpdateBoard :exec
+UPDATE boards SET name = $2 WHERE id = $1
+`
+
+type UpdateBoardParams struct {
+	ID   int32
+	Name string
+}
+
+func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) error {
+	_, err := q.db.ExecContext(ctx, updateBoard, arg.ID, arg.Name)
+	return err
+}
+
+const updateState = `-- name: UpdateState :exec
+UPDATE states SET name = $2 WHERE id = $1
+`
+
+type UpdateStateParams struct {
+	ID   int32
+	Name string
+}
+
+func (q *Queries) UpdateState(ctx context.Context, arg UpdateStateParams) error {
+	_, err := q.db.ExecContext(ctx, updateState, arg.ID, arg.Name)
+	return err
+}
+
+const updateTask = `-- name: UpdateTask :exec
+UPDATE tasks SET title = $2, content = $3 WHERE id = $1
+`
+
+type UpdateTaskParams struct {
+	ID      int32
+	Title   string
+	Content string
+}
+
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
+	_, err := q.db.ExecContext(ctx, updateTask, arg.ID, arg.Title, arg.Content)
+	return err
 }
 
 const updateTaskState = `-- name: UpdateTaskState :exec
