@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/edvina16/protai-backend/internal/database"
+	"github.com/edvina16/atmon-backend/internal/database"
 )
 
 type mockTaskDb struct{}
