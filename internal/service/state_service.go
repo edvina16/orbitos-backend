@@ -13,6 +13,9 @@ type StateDB interface {
 	ListTasksByState(ctx context.Context, boardID int32) ([]database.Task, error)
 	CreateTask(ctx context.Context, params database.CreateTaskParams) (database.Task, error)
 	UpdateTaskState(ctx context.Context, arg database.UpdateTaskStateParams) error
+	DeleteState(ctx context.Context, stateID int32) error
+	UpdateState(ctx context.Context, arg database.UpdateStateParams) error
+	GetStateByID(ctx context.Context, stateID int32) (database.State, error)
 }
 
 type StateService struct {
@@ -83,4 +86,33 @@ func (s *StateService) UpdateTaskState(ctx context.Context, taskID int, stateID 
 		StateID: int32(stateID),
 	}
 	return s.DB.UpdateTaskState(ctx, params)
+}
+
+func (s *StateService) DeleteState(ctx context.Context, stateID int) error {
+	return s.DB.DeleteState(ctx, int32(stateID))
+}
+
+func (s *StateService) UpdateState(ctx context.Context, stateID int, name string) error {
+	params := database.UpdateStateParams{
+		ID:   int32(stateID),
+		Name: name,
+	}
+	return s.DB.UpdateState(ctx, params)
+}
+
+func (s *StateService) GetStateByID(ctx context.Context, stateID int32, boardID int32) (models.State, error) {
+	dbState, err := s.DB.ListStatesByBoard(ctx, boardID)
+	if err != nil {
+		return models.State{}, err
+	}
+	for _, st := range dbState {
+		if st.ID == stateID {
+			return models.State{
+				ID:      int(st.ID),
+				Name:    st.Name,
+				BoardID: int(st.BoardID),
+			}, nil
+		}
+	}
+	return models.State{}, nil
 }
