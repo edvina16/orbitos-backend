@@ -4,4 +4,5 @@ type Task struct {
 	ID      int    `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
+	StateID int    `json:"state_id"`
 }
