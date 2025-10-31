@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/edvina16/icpal-backend/internal/handlers"
+	"github.com/edvina16/protai-backend/internal/handlers"
 	"github.com/labstack/echo/v4"
 )
 

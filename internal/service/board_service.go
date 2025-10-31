@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/edvina16/icpal-backend/internal/database"
-	"github.com/edvina16/icpal-backend/internal/models"
+	"github.com/edvina16/protai-backend/internal/database"
+	"github.com/edvina16/protai-backend/internal/models"
 )
 
 type BoardDB interface {
