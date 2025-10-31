@@ -11,7 +11,7 @@ import (
 func Connect() (*sql.DB, error) {
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		dbUrl = "postgres://postgres:icpalpass@localhost:5433/icpal"
+		dbUrl = "postgres://atmon:atmonpass@localhost:5433/atmon"
 	}
 	return sql.Open("pgx", dbUrl)
 }

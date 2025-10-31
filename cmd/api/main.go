@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 
-	"github.com/edvina16/icpal-backend/internal/database"
-	"github.com/edvina16/icpal-backend/internal/handlers"
-	"github.com/edvina16/icpal-backend/internal/routes"
-	"github.com/edvina16/icpal-backend/internal/service"
+	"github.com/edvina16/atmon-backend/internal/database"
+	"github.com/edvina16/atmon-backend/internal/handlers"
+	"github.com/edvina16/atmon-backend/internal/routes"
+	"github.com/edvina16/atmon-backend/internal/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )

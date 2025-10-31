@@ -1,4 +1,4 @@
-module github.com/edvina16/icpal-backend
+module github.com/edvina16/atmon-backend
 
 go 1.25.3
 
