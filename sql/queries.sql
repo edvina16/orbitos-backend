@@ -18,3 +18,6 @@ INSERT INTO tasks (title, content, state_id) VALUES ($1, $2, $3) RETURNING *;
 
 -- name: ListTasks :many
 SELECT * FROM tasks;
+
+-- name: UpdateTaskState :exec
+UPDATE tasks SET state_id = $2 WHERE id = $1;

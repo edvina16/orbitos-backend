@@ -175,3 +175,17 @@ func (q *Queries) ListTasksByState(ctx context.Context, stateID int32) ([]Task, 
 	}
 	return items, nil
 }
+
+const updateTaskState = `-- name: UpdateTaskState :exec
+UPDATE tasks SET state_id = $2 WHERE id = $1
+`
+
+type UpdateTaskStateParams struct {
+	ID      int32
+	StateID int32
+}
+
+func (q *Queries) UpdateTaskState(ctx context.Context, arg UpdateTaskStateParams) error {
+	_, err := q.db.ExecContext(ctx, updateTaskState, arg.ID, arg.StateID)
+	return err
+}

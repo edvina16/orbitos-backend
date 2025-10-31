@@ -19,4 +19,7 @@ func RegisterBoard(e *echo.Echo, boardHandler *handlers.BoardHandler) {
 func RegisterState(e *echo.Echo, stateHandler *handlers.StateHandler) {
 	e.GET("/api/boards/:board_id/states", stateHandler.ListStates)
 	e.POST("/api/boards/:board_id/states", stateHandler.CreateState)
+	e.GET("/api/boards/:board_id/states/:state_id/tasks", stateHandler.ListTasksByState)
+	e.POST("/api/boards/:board_id/states/:state_id/tasks", stateHandler.CreateTaskInState)
+	e.PUT("/api/boards/:board_id/states/:state_id/tasks/:task_id", stateHandler.UpdateTaskState)
 }
