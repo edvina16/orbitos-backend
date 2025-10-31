@@ -4,20 +4,38 @@
 
 package database
 
+import (
+	"time"
+)
+
 type Board struct {
-	ID   int32
-	Name string
+	ID        int32
+	UserID    int32
+	Name      string
+	CreatedAt time.Time
 }
 
 type State struct {
-	ID      int32
-	Name    string
-	BoardID int32
+	ID        int32
+	UserID    int32
+	Name      string
+	BoardID   int32
+	CreatedAt time.Time
 }
 
 type Task struct {
-	ID      int32
-	Title   string
-	Content string
-	StateID int32
+	ID        int32
+	UserID    int32
+	Title     string
+	Content   string
+	StateID   int32
+	CreatedAt time.Time
+}
+
+type User struct {
+	ID           int32
+	Username     string
+	Email        string
+	PasswordHash string
+	CreatedAt    time.Time
 }

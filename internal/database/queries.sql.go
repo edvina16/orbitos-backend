@@ -10,125 +10,267 @@ import (
 )
 
 const createBoard = `-- name: CreateBoard :one
-INSERT INTO boards (name) VALUES ($1) RETURNING id, name
+INSERT INTO boards (name, user_id) VALUES ($1, $2) RETURNING id, user_id, name, created_at
 `
 
-func (q *Queries) CreateBoard(ctx context.Context, name string) (Board, error) {
-	row := q.db.QueryRowContext(ctx, createBoard, name)
+type CreateBoardParams struct {
+	Name   string
+	UserID int32
+}
+
+func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) (Board, error) {
+	row := q.db.QueryRowContext(ctx, createBoard, arg.Name, arg.UserID)
 	var i Board
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
 const createState = `-- name: CreateState :one
-INSERT INTO states (name, board_id) VALUES ($1, $2) RETURNING id, name, board_id
+INSERT INTO states (name, board_id, user_id) VALUES ($1, $2, $3) RETURNING id, user_id, name, board_id, created_at
 `
 
 type CreateStateParams struct {
 	Name    string
 	BoardID int32
+	UserID  int32
 }
 
 func (q *Queries) CreateState(ctx context.Context, arg CreateStateParams) (State, error) {
-	row := q.db.QueryRowContext(ctx, createState, arg.Name, arg.BoardID)
+	row := q.db.QueryRowContext(ctx, createState, arg.Name, arg.BoardID, arg.UserID)
 	var i State
-	err := row.Scan(&i.ID, &i.Name, &i.BoardID)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.BoardID,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
 const createTask = `-- name: CreateTask :one
-INSERT INTO tasks (title, content, state_id) VALUES ($1, $2, $3) RETURNING id, title, content, state_id
+INSERT INTO tasks (title, content, state_id, user_id) VALUES ($1, $2, $3, $4) RETURNING id, user_id, title, content, state_id, created_at
 `
 
 type CreateTaskParams struct {
 	Title   string
 	Content string
 	StateID int32
+	UserID  int32
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error) {
-	row := q.db.QueryRowContext(ctx, createTask, arg.Title, arg.Content, arg.StateID)
+	row := q.db.QueryRowContext(ctx, createTask,
+		arg.Title,
+		arg.Content,
+		arg.StateID,
+		arg.UserID,
+	)
 	var i Task
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Title,
 		&i.Content,
 		&i.StateID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, password_hash, created_at
+`
+
+type CreateUserParams struct {
+	Username     string
+	Email        string
+	PasswordHash string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.Username, arg.Email, arg.PasswordHash)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const deleteBoard = `-- name: DeleteBoard :exec
-DELETE FROM boards WHERE id = $1
+DELETE FROM boards WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) DeleteBoard(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteBoard, id)
+type DeleteBoardParams struct {
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) DeleteBoard(ctx context.Context, arg DeleteBoardParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBoard, arg.ID, arg.UserID)
 	return err
 }
 
 const deleteState = `-- name: DeleteState :exec
-DELETE FROM states WHERE id = $1
+DELETE FROM states WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) DeleteState(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteState, id)
+type DeleteStateParams struct {
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) DeleteState(ctx context.Context, arg DeleteStateParams) error {
+	_, err := q.db.ExecContext(ctx, deleteState, arg.ID, arg.UserID)
 	return err
 }
 
 const deleteTask = `-- name: DeleteTask :exec
-DELETE FROM tasks WHERE id = $1
+DELETE FROM tasks WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) DeleteTask(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteTask, id)
+type DeleteTaskParams struct {
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) DeleteTask(ctx context.Context, arg DeleteTaskParams) error {
+	_, err := q.db.ExecContext(ctx, deleteTask, arg.ID, arg.UserID)
 	return err
 }
 
 const getBoardByID = `-- name: GetBoardByID :one
-SELECT id, name FROM boards WHERE id = $1
+SELECT id, user_id, name, created_at FROM boards WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) GetBoardByID(ctx context.Context, id int32) (Board, error) {
-	row := q.db.QueryRowContext(ctx, getBoardByID, id)
+type GetBoardByIDParams struct {
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) GetBoardByID(ctx context.Context, arg GetBoardByIDParams) (Board, error) {
+	row := q.db.QueryRowContext(ctx, getBoardByID, arg.ID, arg.UserID)
 	var i Board
-	err := row.Scan(&i.ID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
 const getStateByID = `-- name: GetStateByID :one
-SELECT id, name, board_id FROM states WHERE id = $1
+SELECT id, user_id, name, board_id, created_at FROM states WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) GetStateByID(ctx context.Context, id int32) (State, error) {
-	row := q.db.QueryRowContext(ctx, getStateByID, id)
+type GetStateByIDParams struct {
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) GetStateByID(ctx context.Context, arg GetStateByIDParams) (State, error) {
+	row := q.db.QueryRowContext(ctx, getStateByID, arg.ID, arg.UserID)
 	var i State
-	err := row.Scan(&i.ID, &i.Name, &i.BoardID)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.BoardID,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
 const getTaskByID = `-- name: GetTaskByID :one
-SELECT id, title, content, state_id FROM tasks WHERE id = $1
+SELECT id, user_id, title, content, state_id, created_at FROM tasks WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) GetTaskByID(ctx context.Context, id int32) (Task, error) {
-	row := q.db.QueryRowContext(ctx, getTaskByID, id)
+type GetTaskByIDParams struct {
+	ID     int32
+	UserID int32
+}
+
+func (q *Queries) GetTaskByID(ctx context.Context, arg GetTaskByIDParams) (Task, error) {
+	row := q.db.QueryRowContext(ctx, getTaskByID, arg.ID, arg.UserID)
 	var i Task
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Title,
 		&i.Content,
 		&i.StateID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, username, email, password_hash, created_at FROM users WHERE email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, username, email, password_hash, created_at FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getUserByUsername = `-- name: GetUserByUsername :one
+SELECT id, username, email, password_hash, created_at FROM users WHERE username = $1
+`
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByUsername, username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listBoards = `-- name: ListBoards :many
-SELECT id, name FROM boards
+SELECT id, user_id, name, created_at FROM boards WHERE user_id = $1
 `
 
-func (q *Queries) ListBoards(ctx context.Context) ([]Board, error) {
-	rows, err := q.db.QueryContext(ctx, listBoards)
+func (q *Queries) ListBoards(ctx context.Context, userID int32) ([]Board, error) {
+	rows, err := q.db.QueryContext(ctx, listBoards, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +278,44 @@ func (q *Queries) ListBoards(ctx context.Context) ([]Board, error) {
 	var items []Board
 	for rows.Next() {
 		var i Board
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBoardsByUser = `-- name: ListBoardsByUser :many
+SELECT id, user_id, name, created_at FROM boards WHERE user_id = $1
+`
+
+func (q *Queries) ListBoardsByUser(ctx context.Context, userID int32) ([]Board, error) {
+	rows, err := q.db.QueryContext(ctx, listBoardsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Board
+	for rows.Next() {
+		var i Board
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -151,11 +330,16 @@ func (q *Queries) ListBoards(ctx context.Context) ([]Board, error) {
 }
 
 const listStatesByBoard = `-- name: ListStatesByBoard :many
-SELECT id, name, board_id FROM states WHERE board_id = $1
+SELECT id, user_id, name, board_id, created_at FROM states WHERE board_id = $1 AND user_id = $2
 `
 
-func (q *Queries) ListStatesByBoard(ctx context.Context, boardID int32) ([]State, error) {
-	rows, err := q.db.QueryContext(ctx, listStatesByBoard, boardID)
+type ListStatesByBoardParams struct {
+	BoardID int32
+	UserID  int32
+}
+
+func (q *Queries) ListStatesByBoard(ctx context.Context, arg ListStatesByBoardParams) ([]State, error) {
+	rows, err := q.db.QueryContext(ctx, listStatesByBoard, arg.BoardID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +347,13 @@ func (q *Queries) ListStatesByBoard(ctx context.Context, boardID int32) ([]State
 	var items []State
 	for rows.Next() {
 		var i State
-		if err := rows.Scan(&i.ID, &i.Name, &i.BoardID); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.BoardID,
+			&i.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -178,11 +368,11 @@ func (q *Queries) ListStatesByBoard(ctx context.Context, boardID int32) ([]State
 }
 
 const listTasks = `-- name: ListTasks :many
-SELECT id, title, content, state_id FROM tasks
+SELECT id, user_id, title, content, state_id, created_at FROM tasks WHERE user_id = $1
 `
 
-func (q *Queries) ListTasks(ctx context.Context) ([]Task, error) {
-	rows, err := q.db.QueryContext(ctx, listTasks)
+func (q *Queries) ListTasks(ctx context.Context, userID int32) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, listTasks, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -192,9 +382,11 @@ func (q *Queries) ListTasks(ctx context.Context) ([]Task, error) {
 		var i Task
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.Title,
 			&i.Content,
 			&i.StateID,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -210,11 +402,16 @@ func (q *Queries) ListTasks(ctx context.Context) ([]Task, error) {
 }
 
 const listTasksByState = `-- name: ListTasksByState :many
-SELECT id, title, content, state_id FROM tasks WHERE state_id = $1
+SELECT id, user_id, title, content, state_id, created_at FROM tasks WHERE state_id = $1 AND user_id = $2
 `
 
-func (q *Queries) ListTasksByState(ctx context.Context, stateID int32) ([]Task, error) {
-	rows, err := q.db.QueryContext(ctx, listTasksByState, stateID)
+type ListTasksByStateParams struct {
+	StateID int32
+	UserID  int32
+}
+
+func (q *Queries) ListTasksByState(ctx context.Context, arg ListTasksByStateParams) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, listTasksByState, arg.StateID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -224,9 +421,45 @@ func (q *Queries) ListTasksByState(ctx context.Context, stateID int32) ([]Task, 
 		var i Task
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.Title,
 			&i.Content,
 			&i.StateID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTasksByUser = `-- name: ListTasksByUser :many
+SELECT id, user_id, title, content, state_id, created_at FROM tasks WHERE user_id = $1
+`
+
+func (q *Queries) ListTasksByUser(ctx context.Context, userID int32) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, listTasksByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.Content,
+			&i.StateID,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -242,58 +475,67 @@ func (q *Queries) ListTasksByState(ctx context.Context, stateID int32) ([]Task, 
 }
 
 const updateBoard = `-- name: UpdateBoard :exec
-UPDATE boards SET name = $2 WHERE id = $1
+UPDATE boards SET name = $2 WHERE id = $1 AND user_id = $3
 `
 
 type UpdateBoardParams struct {
-	ID   int32
-	Name string
+	ID     int32
+	Name   string
+	UserID int32
 }
 
 func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) error {
-	_, err := q.db.ExecContext(ctx, updateBoard, arg.ID, arg.Name)
+	_, err := q.db.ExecContext(ctx, updateBoard, arg.ID, arg.Name, arg.UserID)
 	return err
 }
 
 const updateState = `-- name: UpdateState :exec
-UPDATE states SET name = $2 WHERE id = $1
+UPDATE states SET name = $2 WHERE id = $1 AND user_id = $3
 `
 
 type UpdateStateParams struct {
-	ID   int32
-	Name string
+	ID     int32
+	Name   string
+	UserID int32
 }
 
 func (q *Queries) UpdateState(ctx context.Context, arg UpdateStateParams) error {
-	_, err := q.db.ExecContext(ctx, updateState, arg.ID, arg.Name)
+	_, err := q.db.ExecContext(ctx, updateState, arg.ID, arg.Name, arg.UserID)
 	return err
 }
 
 const updateTask = `-- name: UpdateTask :exec
-UPDATE tasks SET title = $2, content = $3 WHERE id = $1
+UPDATE tasks SET title = $2, content = $3 WHERE id = $1 AND user_id = $4
 `
 
 type UpdateTaskParams struct {
 	ID      int32
 	Title   string
 	Content string
+	UserID  int32
 }
 
 func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
-	_, err := q.db.ExecContext(ctx, updateTask, arg.ID, arg.Title, arg.Content)
+	_, err := q.db.ExecContext(ctx, updateTask,
+		arg.ID,
+		arg.Title,
+		arg.Content,
+		arg.UserID,
+	)
 	return err
 }
 
 const updateTaskState = `-- name: UpdateTaskState :exec
-UPDATE tasks SET state_id = $2 WHERE id = $1
+UPDATE tasks SET state_id = $2 WHERE id = $1 AND user_id = $3
 `
 
 type UpdateTaskStateParams struct {
 	ID      int32
 	StateID int32
+	UserID  int32
 }
 
 func (q *Queries) UpdateTaskState(ctx context.Context, arg UpdateTaskStateParams) error {
-	_, err := q.db.ExecContext(ctx, updateTaskState, arg.ID, arg.StateID)
+	_, err := q.db.ExecContext(ctx, updateTaskState, arg.ID, arg.StateID, arg.UserID)
 	return err
 }

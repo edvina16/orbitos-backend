@@ -14,12 +14,17 @@ type StateHandler struct {
 }
 
 func (h *StateHandler) ListStates(c echo.Context) error {
+	userID, err := GetUserIDFromContext(c)
+	if err != nil {
+		c.Logger().Errorf("JWT extraction error: %v", err)
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+	}
 	boardIDStr := c.Param("board_id")
 	boardID, err := strconv.Atoi(boardIDStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid board ID"})
 	}
-	states, err := h.Service.ListStatesByBoard(c.Request().Context(), boardID)
+	states, err := h.Service.ListStatesByBoard(c.Request().Context(), boardID, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -27,6 +32,11 @@ func (h *StateHandler) ListStates(c echo.Context) error {
 }
 
 func (h *StateHandler) CreateState(c echo.Context) error {
+	userID, err := GetUserIDFromContext(c)
+	if err != nil {
+		c.Logger().Errorf("JWT extraction error: %v", err)
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+	}
 	var input struct {
 		Name string `json:"name"`
 	}
@@ -41,7 +51,7 @@ func (h *StateHandler) CreateState(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid board ID"})
 	}
 
-	state, err := h.Service.CreateState(c.Request().Context(), input.Name, boardID)
+	state, err := h.Service.CreateState(c.Request().Context(), input.Name, boardID, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -49,12 +59,17 @@ func (h *StateHandler) CreateState(c echo.Context) error {
 }
 
 func (h *StateHandler) ListTasksByState(c echo.Context) error {
+	userID, err := GetUserIDFromContext(c)
+	if err != nil {
+		c.Logger().Errorf("JWT extraction error: %v", err)
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+	}
 	stateIDStr := c.Param("state_id")
 	stateID, err := strconv.Atoi(stateIDStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid state ID"})
 	}
-	tasks, err := h.Service.ListTasksByState(c.Request().Context(), stateID)
+	tasks, err := h.Service.ListTasksByState(c.Request().Context(), stateID, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -62,20 +77,24 @@ func (h *StateHandler) ListTasksByState(c echo.Context) error {
 }
 
 func (h *StateHandler) CreateTaskInState(c echo.Context) error {
-	var input struct {
-		Title   string `json:"title"`
-		Content string `json:"content"`
-	}
-
-	if err := c.Bind(&input); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	userID, err := GetUserIDFromContext(c)
+	if err != nil {
+		c.Logger().Errorf("JWT extraction error: %v", err)
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 	}
 	stateIDStr := c.Param("state_id")
 	stateID, err := strconv.Atoi(stateIDStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid state ID"})
 	}
-	task, err := h.Service.CreateTaskInState(c.Request().Context(), input.Title, input.Content, stateID)
+	var input struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+	if err := c.Bind(&input); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
+	}
+	task, err := h.TaskService.CreateTaskInState(c.Request().Context(), input.Title, input.Content, stateID, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -83,6 +102,11 @@ func (h *StateHandler) CreateTaskInState(c echo.Context) error {
 }
 
 func (h *StateHandler) UpdateTaskState(c echo.Context) error {
+	userID, err := GetUserIDFromContext(c)
+	if err != nil {
+		c.Logger().Errorf("JWT extraction error: %v", err)
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+	}
 	taskIDStr := c.Param("task_id")
 	stateIDStr := c.Param("state_id")
 	taskID, err := strconv.Atoi(taskIDStr)
@@ -100,16 +124,15 @@ func (h *StateHandler) UpdateTaskState(c echo.Context) error {
 	if err := c.Bind(&input); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid input"})
 	}
-	// Update all fields: state, title, content
-	err = h.TaskService.UpdateTask(c.Request().Context(), taskID, input.Title, input.Content)
+	err = h.TaskService.UpdateTask(c.Request().Context(), taskID, input.Title, input.Content, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	err = h.Service.UpdateTaskState(c.Request().Context(), taskID, stateID)
+	err = h.Service.UpdateTaskState(c.Request().Context(), taskID, stateID, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	task, err := h.TaskService.GetTaskByID(c.Request().Context(), int32(taskID))
+	task, err := h.TaskService.GetTaskByID(c.Request().Context(), taskID, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -117,13 +140,18 @@ func (h *StateHandler) UpdateTaskState(c echo.Context) error {
 }
 
 func (h *StateHandler) DeleteState(c echo.Context) error {
+	userID, err := GetUserIDFromContext(c)
+	if err != nil {
+		c.Logger().Errorf("JWT extraction error: %v", err)
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+	}
 	stateIDStr := c.Param("state_id")
 	stateID, err := strconv.Atoi(stateIDStr)
 	if err != nil {
 		c.Logger().Errorf("Invalid state ID: %v", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid state ID"})
 	}
-	err = h.Service.DeleteState(c.Request().Context(), stateID)
+	err = h.Service.DeleteState(c.Request().Context(), stateID, userID)
 	if err != nil {
 		c.Logger().Errorf("Failed to delete state %d: %v", stateID, err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
