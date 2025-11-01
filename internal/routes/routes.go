@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/edvina16/atmon-backend/internal/handlers"
+	"github.com/edvina16/orbitos-backend/internal/handlers"
 	"github.com/labstack/echo/v4"
 )
 

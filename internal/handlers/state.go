@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/edvina16/atmon-backend/internal/service"
+	"github.com/edvina16/orbitos-backend/internal/service"
 	"github.com/labstack/echo/v4"
 )
 

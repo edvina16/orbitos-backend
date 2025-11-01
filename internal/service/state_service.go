@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/edvina16/atmon-backend/internal/database"
-	"github.com/edvina16/atmon-backend/internal/models"
+	"github.com/edvina16/orbitos-backend/internal/database"
+	"github.com/edvina16/orbitos-backend/internal/models"
 )
 
 type StateDB interface {

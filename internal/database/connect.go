@@ -11,7 +11,7 @@ import (
 func Connect() (*sql.DB, error) {
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
-		dbUrl = "postgres://atmon:atmonpass@localhost:5433/atmon"
+		dbUrl = "postgres://orbitos:orbitospass@localhost:5433/orbitos"
 	}
 	return sql.Open("pgx", dbUrl)
 }

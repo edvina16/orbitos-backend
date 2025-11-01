@@ -1,4 +1,4 @@
-module github.com/edvina16/atmon-backend
+module github.com/edvina16/orbitos-backend
 
 go 1.25.3
 
