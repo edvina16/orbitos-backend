@@ -5,6 +5,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -12,6 +13,16 @@ type Board struct {
 	ID        int32
 	UserID    int32
 	Name      string
+	CreatedAt time.Time
+}
+
+type Reminder struct {
+	ID        int32
+	UserID    int32
+	TaskID    int32
+	Message   sql.NullString
+	RemindAt  time.Time
+	Frequency sql.NullInt64
 	CreatedAt time.Time
 }
 
