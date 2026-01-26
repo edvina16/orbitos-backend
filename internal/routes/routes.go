@@ -5,7 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func RegisterRoutes(api *echo.Group, boardHandler *handlers.BoardHandler, stateHandler *handlers.StateHandler, taskHandler *handlers.TaskHandler) {
+func RegisterRoutes(api *echo.Group, boardHandler *handlers.BoardHandler, stateHandler *handlers.StateHandler, taskHandler *handlers.TaskHandler, reminderHandler *handlers.ReminderHandler) {
 	// Board routes
 	board := api.Group("/boards")
 	board.GET("", boardHandler.ListBoards)
@@ -27,9 +27,6 @@ func RegisterRoutes(api *echo.Group, boardHandler *handlers.BoardHandler, stateH
 	task.POST("", stateHandler.CreateTaskInState)
 	task.PUT("/:task_id", stateHandler.UpdateTaskState)
 
-	// Top-level task routes
-	api.GET("/tasks", taskHandler.ListTasks)
-	api.POST("/tasks", taskHandler.CreateTask)
-	api.POST("/tasks/:id", taskHandler.UpdateTask)
-	api.DELETE("/tasks/:id", taskHandler.DeleteTask)
+	// Reminder routes (nested under tasks)
+	api.POST("/tasks/:task_id/reminders", reminderHandler.CreateReminder)
 }

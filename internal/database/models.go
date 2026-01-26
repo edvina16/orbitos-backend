@@ -22,7 +22,7 @@ type Reminder struct {
 	TaskID    int32
 	Message   sql.NullString
 	RemindAt  time.Time
-	Frequency sql.NullInt64
+	Frequency sql.NullString
 	CreatedAt time.Time
 }
 

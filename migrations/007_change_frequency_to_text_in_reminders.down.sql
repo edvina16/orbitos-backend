@@ -1,0 +1,2 @@
+ALTER TABLE reminders ALTER COLUMN frequency TYPE INTERVAL USING frequency::INTERVAL;
+

@@ -36,6 +36,6 @@ CREATE TABLE reminders (
     task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
     message TEXT NULL,
     remind_at TIMESTAMP NOT NULL,
-    frequency INTERVAL NULL,
+    frequency TEXT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

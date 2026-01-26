@@ -43,7 +43,7 @@ type CreateReminderParams struct {
 	TaskID    int32
 	Message   sql.NullString
 	RemindAt  time.Time
-	Frequency sql.NullInt64
+	Frequency sql.NullString
 }
 
 func (q *Queries) CreateReminder(ctx context.Context, arg CreateReminderParams) (Reminder, error) {
@@ -680,7 +680,7 @@ type UpdateReminderParams struct {
 	ID        int32
 	Message   sql.NullString
 	RemindAt  time.Time
-	Frequency sql.NullInt64
+	Frequency sql.NullString
 }
 
 func (q *Queries) UpdateReminder(ctx context.Context, arg UpdateReminderParams) (Reminder, error) {

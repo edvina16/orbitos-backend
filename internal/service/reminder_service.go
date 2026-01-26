@@ -2,16 +2,18 @@ package service
 
 import (
 	"context"
-	"github.com/edvina16/orbitos-backend/internal/database"
+	"database/sql"
 	"time"
+
+	"github.com/edvina16/orbitos-backend/internal/database"
 )
 
 type ReminderDB interface {
-	CreateTask(ctx context.Context, params database.CreateReminderParams) (database.Reminder, error)
+	CreateReminder(ctx context.Context, params database.CreateReminderParams) (database.Reminder, error)
 }
 
 type ReminderService struct {
-	db ReminderDB
+	DB ReminderDB
 }
 
 func (s *ReminderService) CreateReminder(ctx context.Context, userID int, taskID int, message string, remindAt string, frequency string) (database.Reminder, error) {
@@ -22,9 +24,9 @@ func (s *ReminderService) CreateReminder(ctx context.Context, userID int, taskID
 	params := database.CreateReminderParams{
 		UserID:    int32(userID),
 		TaskID:    int32(taskID),
-		Message:   message,
+		Message:   sql.NullString{String: message, Valid: message != ""},
 		RemindAt:  remindAtTime,
-		Frequency: frequency,
+		Frequency: sql.NullString{String: frequency, Valid: frequency != ""},
 	}
-	return s.db.CreateTask(ctx, params)
+	return s.DB.CreateReminder(ctx, params)
 }
