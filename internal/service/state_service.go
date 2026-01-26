@@ -8,22 +8,23 @@ import (
 )
 
 type StateDB interface {
-	ListStatesByBoard(ctx context.Context, boardID int32) ([]database.State, error)
-	CreateState(ctx context.Context, params database.CreateStateParams) (database.State, error)
-	ListTasksByState(ctx context.Context, boardID int32) ([]database.Task, error)
-	CreateTask(ctx context.Context, params database.CreateTaskParams) (database.Task, error)
+	ListStatesByBoard(ctx context.Context, arg database.ListStatesByBoardParams) ([]database.State, error)
+	CreateState(ctx context.Context, arg database.CreateStateParams) (database.State, error)
+	ListTasksByState(ctx context.Context, arg database.ListTasksByStateParams) ([]database.Task, error)
+	CreateTask(ctx context.Context, arg database.CreateTaskParams) (database.Task, error)
 	UpdateTaskState(ctx context.Context, arg database.UpdateTaskStateParams) error
-	DeleteState(ctx context.Context, stateID int32) error
+	DeleteState(ctx context.Context, arg database.DeleteStateParams) error
 	UpdateState(ctx context.Context, arg database.UpdateStateParams) error
-	GetStateByID(ctx context.Context, stateID int32) (database.State, error)
+	GetStateByID(ctx context.Context, arg database.GetStateByIDParams) (database.State, error)
 }
 
 type StateService struct {
 	DB StateDB
 }
 
-func (s *StateService) ListStatesByBoard(ctx context.Context, boardID int) ([]models.State, error) {
-	dbStates, err := s.DB.ListStatesByBoard(ctx, int32(boardID))
+func (s *StateService) ListStatesByBoard(ctx context.Context, boardID int, userID int) ([]models.State, error) {
+	params := database.ListStatesByBoardParams{BoardID: int32(boardID), UserID: int32(userID)}
+	dbStates, err := s.DB.ListStatesByBoard(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -33,25 +34,24 @@ func (s *StateService) ListStatesByBoard(ctx context.Context, boardID int) ([]mo
 			ID:      int(dbState.ID),
 			Name:    dbState.Name,
 			BoardID: int(dbState.BoardID),
+			UserID:  int(dbState.UserID),
 		})
 	}
 	return states, nil
 }
 
-func (s *StateService) CreateState(ctx context.Context, name string, boardID int) (models.State, error) {
-	params := database.CreateStateParams{
-		Name:    name,
-		BoardID: int32(boardID),
-	}
+func (s *StateService) CreateState(ctx context.Context, name string, boardID int, userID int) (models.State, error) {
+	params := database.CreateStateParams{Name: name, BoardID: int32(boardID), UserID: int32(userID)}
 	b, err := s.DB.CreateState(ctx, params)
 	if err != nil {
 		return models.State{}, err
 	}
-	return models.State{ID: int(b.ID), Name: b.Name, BoardID: int(b.BoardID)}, nil
+	return models.State{ID: int(b.ID), Name: b.Name, BoardID: int(b.BoardID), UserID: int(b.UserID)}, nil
 }
 
-func (s *StateService) ListTasksByState(ctx context.Context, stateID int) ([]models.Task, error) {
-	dbTasks, err := s.DB.ListTasksByState(ctx, int32(stateID))
+func (s *StateService) ListTasksByState(ctx context.Context, stateID int, userID int) ([]models.Task, error) {
+	params := database.ListTasksByStateParams{StateID: int32(stateID), UserID: int32(userID)}
+	dbTasks, err := s.DB.ListTasksByState(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +62,7 @@ func (s *StateService) ListTasksByState(ctx context.Context, stateID int) ([]mod
 			Title:   dbTask.Title,
 			Content: dbTask.Content,
 			StateID: int(dbTask.StateID),
+			UserID:  int(dbTask.UserID),
 		})
 	}
 	return tasks, nil
@@ -80,16 +81,18 @@ func (s *StateService) CreateTaskInState(ctx context.Context, title string, cont
 	return models.Task{ID: int(t.ID), Title: t.Title, Content: t.Content, StateID: int(t.StateID)}, nil
 }
 
-func (s *StateService) UpdateTaskState(ctx context.Context, taskID int, stateID int) error {
+func (s *StateService) UpdateTaskState(ctx context.Context, taskID int, stateID int, userID int) error {
 	params := database.UpdateTaskStateParams{
 		ID:      int32(taskID),
 		StateID: int32(stateID),
+		UserID:  int32(userID),
 	}
 	return s.DB.UpdateTaskState(ctx, params)
 }
 
-func (s *StateService) DeleteState(ctx context.Context, stateID int) error {
-	return s.DB.DeleteState(ctx, int32(stateID))
+func (s *StateService) DeleteState(ctx context.Context, stateID int, userID int) error {
+	params := database.DeleteStateParams{ID: int32(stateID), UserID: int32(userID)}
+	return s.DB.DeleteState(ctx, params)
 }
 
 func (s *StateService) UpdateState(ctx context.Context, stateID int, name string) error {
@@ -100,19 +103,16 @@ func (s *StateService) UpdateState(ctx context.Context, stateID int, name string
 	return s.DB.UpdateState(ctx, params)
 }
 
-func (s *StateService) GetStateByID(ctx context.Context, stateID int32, boardID int32) (models.State, error) {
-	dbState, err := s.DB.ListStatesByBoard(ctx, boardID)
+func (s *StateService) GetStateByID(ctx context.Context, stateID int32, userID int32) (models.State, error) {
+	params := database.GetStateByIDParams{ID: stateID, UserID: userID}
+	dbState, err := s.DB.GetStateByID(ctx, params)
 	if err != nil {
 		return models.State{}, err
 	}
-	for _, st := range dbState {
-		if st.ID == stateID {
-			return models.State{
-				ID:      int(st.ID),
-				Name:    st.Name,
-				BoardID: int(st.BoardID),
-			}, nil
-		}
-	}
-	return models.State{}, nil
+	return models.State{
+		ID:      int(dbState.ID),
+		Name:    dbState.Name,
+		BoardID: int(dbState.BoardID),
+		UserID:  int(dbState.UserID),
+	}, nil
 }

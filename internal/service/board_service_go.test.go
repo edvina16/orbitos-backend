@@ -9,17 +9,17 @@ import (
 
 type mockBoardDb struct{}
 
-func (m *mockBoardDb) ListBoards(ctx context.Context) ([]database.Board, error) {
+func (m *mockBoardDb) ListBoards(ctx context.Context, userID int32) ([]database.Board, error) {
 	return []database.Board{
-		{ID: 1, Name: "Test Board"},
+		{ID: 1, Name: "Test Board", UserID: userID},
 	}, nil
 }
 
-func (m *mockBoardDb) CreateBoard(ctx context.Context, name string) (database.Board, error) {
-	return database.Board{ID: 2, Name: name}, nil
+func (m *mockBoardDb) CreateBoard(ctx context.Context, arg database.CreateBoardParams) (database.Board, error) {
+	return database.Board{ID: 2, Name: arg.Name, UserID: arg.UserID}, nil
 }
 
-func (m *mockBoardDb) DeleteBoard(ctx context.Context, id int32) error {
+func (m *mockBoardDb) DeleteBoard(ctx context.Context, arg database.DeleteBoardParams) error {
 	return nil
 }
 
@@ -27,13 +27,13 @@ func (m *mockBoardDb) UpdateBoard(ctx context.Context, arg database.UpdateBoardP
 	return nil
 }
 
-func (m *mockBoardDb) GetBoardByID(ctx context.Context, boardID int32) (database.Board, error) {
-	return database.Board{ID: boardID, Name: "Test Board"}, nil
+func (m *mockBoardDb) GetBoardByID(ctx context.Context, arg database.GetBoardByIDParams) (database.Board, error) {
+	return database.Board{ID: arg.ID, Name: "Test Board", UserID: arg.UserID}, nil
 }
 
 func TestListBoards(t *testing.T) {
 	svc := BoardService{DB: &mockBoardDb{}}
-	boards, err := svc.ListBoards(context.Background())
+	boards, err := svc.ListBoards(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error listing boards: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestListBoards(t *testing.T) {
 
 func TestGetBoardByID(t *testing.T) {
 	svc := BoardService{DB: &mockBoardDb{}}
-	board, err := svc.GetBoardByID(context.Background(), 1)
+	board, err := svc.GetBoardByID(context.Background(), 1, 42)
 	if err != nil {
 		t.Fatalf("unexpected error getting board by ID: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestGetBoardByID(t *testing.T) {
 
 func TestCreateBoard(t *testing.T) {
 	svc := BoardService{DB: &mockBoardDb{}}
-	board, err := svc.CreateBoard(context.Background(), "New Board")
+	board, err := svc.CreateBoard(context.Background(), "New Board", 42)
 	if err != nil {
 		t.Fatalf("unexpected error creating board: %v", err)
 	}
