@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"time"
 )
 
 const createBoard = `-- name: CreateBoard :one
@@ -25,6 +27,41 @@ func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) (Board
 		&i.ID,
 		&i.UserID,
 		&i.Name,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createReminder = `-- name: CreateReminder :one
+INSERT INTO reminders (user_id, task_id, message, remind_at, frequency)
+VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, user_id, task_id, message, remind_at, frequency, created_at
+`
+
+type CreateReminderParams struct {
+	UserID    int32
+	TaskID    int32
+	Message   sql.NullString
+	RemindAt  time.Time
+	Frequency sql.NullString
+}
+
+func (q *Queries) CreateReminder(ctx context.Context, arg CreateReminderParams) (Reminder, error) {
+	row := q.db.QueryRowContext(ctx, createReminder,
+		arg.UserID,
+		arg.TaskID,
+		arg.Message,
+		arg.RemindAt,
+		arg.Frequency,
+	)
+	var i Reminder
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TaskID,
+		&i.Message,
+		&i.RemindAt,
+		&i.Frequency,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -120,6 +157,15 @@ func (q *Queries) DeleteBoard(ctx context.Context, arg DeleteBoardParams) error 
 	return err
 }
 
+const deleteReminder = `-- name: DeleteReminder :exec
+DELETE FROM reminders WHERE id = $1
+`
+
+func (q *Queries) DeleteReminder(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteReminder, id)
+	return err
+}
+
 const deleteState = `-- name: DeleteState :exec
 DELETE FROM states WHERE id = $1 AND user_id = $2
 `
@@ -164,6 +210,25 @@ func (q *Queries) GetBoardByID(ctx context.Context, arg GetBoardByIDParams) (Boa
 		&i.ID,
 		&i.UserID,
 		&i.Name,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getReminderByID = `-- name: GetReminderByID :one
+SELECT id, user_id, task_id, message, remind_at, frequency, created_at FROM reminders WHERE id = $1
+`
+
+func (q *Queries) GetReminderByID(ctx context.Context, id int32) (Reminder, error) {
+	row := q.db.QueryRowContext(ctx, getReminderByID, id)
+	var i Reminder
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TaskID,
+		&i.Message,
+		&i.RemindAt,
+		&i.Frequency,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -329,6 +394,76 @@ func (q *Queries) ListBoardsByUser(ctx context.Context, userID int32) ([]Board, 
 	return items, nil
 }
 
+const listRemindersByUser = `-- name: ListRemindersByUser :many
+SELECT id, user_id, task_id, message, remind_at, frequency, created_at FROM reminders WHERE user_id = $1 ORDER BY remind_at ASC
+`
+
+func (q *Queries) ListRemindersByUser(ctx context.Context, userID int32) ([]Reminder, error) {
+	rows, err := q.db.QueryContext(ctx, listRemindersByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Reminder
+	for rows.Next() {
+		var i Reminder
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.TaskID,
+			&i.Message,
+			&i.RemindAt,
+			&i.Frequency,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRemindersForTask = `-- name: ListRemindersForTask :many
+SELECT id, user_id, task_id, message, remind_at, frequency, created_at FROM reminders WHERE task_id = $1 ORDER BY remind_at ASC
+`
+
+func (q *Queries) ListRemindersForTask(ctx context.Context, taskID int32) ([]Reminder, error) {
+	rows, err := q.db.QueryContext(ctx, listRemindersForTask, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Reminder
+	for rows.Next() {
+		var i Reminder
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.TaskID,
+			&i.Message,
+			&i.RemindAt,
+			&i.Frequency,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatesByBoard = `-- name: ListStatesByBoard :many
 SELECT id, user_id, name, board_id, created_at FROM states WHERE board_id = $1 AND user_id = $2
 `
@@ -474,6 +609,49 @@ func (q *Queries) ListTasksByUser(ctx context.Context, userID int32) ([]Task, er
 	return items, nil
 }
 
+const listUpcomingReminders = `-- name: ListUpcomingReminders :many
+SELECT id, user_id, task_id, message, remind_at, frequency, created_at FROM reminders
+WHERE remind_at > NOW()
+ORDER BY remind_at ASC
+LIMIT $1 OFFSET $2
+`
+
+type ListUpcomingRemindersParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) ListUpcomingReminders(ctx context.Context, arg ListUpcomingRemindersParams) ([]Reminder, error) {
+	rows, err := q.db.QueryContext(ctx, listUpcomingReminders, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Reminder
+	for rows.Next() {
+		var i Reminder
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.TaskID,
+			&i.Message,
+			&i.RemindAt,
+			&i.Frequency,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateBoard = `-- name: UpdateBoard :exec
 UPDATE boards SET name = $2 WHERE id = $1 AND user_id = $3
 `
@@ -487,6 +665,42 @@ type UpdateBoardParams struct {
 func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) error {
 	_, err := q.db.ExecContext(ctx, updateBoard, arg.ID, arg.Name, arg.UserID)
 	return err
+}
+
+const updateReminder = `-- name: UpdateReminder :one
+UPDATE reminders
+SET message = $2,
+    remind_at = $3,
+    frequency = $4
+WHERE id = $1
+RETURNING id, user_id, task_id, message, remind_at, frequency, created_at
+`
+
+type UpdateReminderParams struct {
+	ID        int32
+	Message   sql.NullString
+	RemindAt  time.Time
+	Frequency sql.NullString
+}
+
+func (q *Queries) UpdateReminder(ctx context.Context, arg UpdateReminderParams) (Reminder, error) {
+	row := q.db.QueryRowContext(ctx, updateReminder,
+		arg.ID,
+		arg.Message,
+		arg.RemindAt,
+		arg.Frequency,
+	)
+	var i Reminder
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TaskID,
+		&i.Message,
+		&i.RemindAt,
+		&i.Frequency,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const updateState = `-- name: UpdateState :exec

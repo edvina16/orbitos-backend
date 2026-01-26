@@ -66,3 +66,34 @@ SELECT * FROM users WHERE email = $1;
 
 -- name: GetUserByID :one
 SELECT * FROM users WHERE id = $1;
+
+-- name: CreateReminder :one
+INSERT INTO reminders (user_id, task_id, message, remind_at, frequency)
+VALUES ($1, $2, $3, $4, $5)
+    RETURNING *;
+
+-- name: GetReminderByID :one
+SELECT * FROM reminders WHERE id = $1;
+
+-- name: ListRemindersByUser :many
+SELECT * FROM reminders WHERE user_id = $1 ORDER BY remind_at ASC;
+
+-- name: ListRemindersForTask :many
+SELECT * FROM reminders WHERE task_id = $1 ORDER BY remind_at ASC;
+
+-- name: UpdateReminder :one
+UPDATE reminders
+SET message = $2,
+    remind_at = $3,
+    frequency = $4
+WHERE id = $1
+RETURNING *;
+
+-- name: DeleteReminder :exec
+DELETE FROM reminders WHERE id = $1;
+
+-- name: ListUpcomingReminders :many
+SELECT * FROM reminders
+WHERE remind_at > NOW()
+ORDER BY remind_at ASC
+LIMIT $1 OFFSET $2;

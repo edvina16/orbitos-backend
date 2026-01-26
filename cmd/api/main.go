@@ -29,12 +29,21 @@ func main() {
 	e := echo.New()
 	e.Logger.SetLevel(elog.INFO)
 	e.Use(middleware.Logger())
-	e.Use(middleware.CORS())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowCredentials: true,
+	}))
 
 	taskHandler := &handlers.TaskHandler{Service: &service.TaskService{DB: queries}}
 	boardHandler := &handlers.BoardHandler{Service: &service.BoardService{DB: queries}}
 	stateHandler := &handlers.StateHandler{Service: &service.StateService{DB: queries}, TaskService: &service.TaskService{DB: queries}}
 	userHandler := &handlers.UserHandler{Service: &service.UserService{DB: queries}}
+	reminderHandler := &handlers.ReminderHandler{
+		Service: &service.ReminderService{DB: queries},
+		Task:    &service.TaskService{DB: queries},
+	}
 
 	e.POST("/api/register", userHandler.RegisterUser)
 	e.POST("/api/login", userHandler.LoginUser)
@@ -43,7 +52,7 @@ func main() {
 	apiGroup := e.Group("/api")
 	apiGroup.Use(echojwt.JWT([]byte(jwtSecret)))
 
-	routes.RegisterRoutes(apiGroup, boardHandler, stateHandler, taskHandler)
+	routes.RegisterRoutes(apiGroup, boardHandler, stateHandler, taskHandler, reminderHandler)
 
 	e.Logger.Fatal(e.Start(":5000"))
 }
